@@ -56,9 +56,9 @@ class ViewController: UIViewController {
             self.objectsArray.append(myTextField.text!)
             self.tableView.insertRows(at: [IndexPath(row: self.objectsArray.count-1, section: 0)], with: .automatic)
         }
-        
-        alertVC.addAction(cancelAction)
         alertVC.addAction(addAction)
+        alertVC.addAction(cancelAction)
+        
         present(alertVC, animated: true, completion: nil)
     }
 
