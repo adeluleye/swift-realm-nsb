@@ -7,10 +7,11 @@
 //
 
 import UIKit
+import RealmSwift
 
 class ViewController: UIViewController {
     
-    var objectsArray = [String]()
+    var addButton = UIBarButtonItem()
     
     let tableView: UITableView = {
         let tableView = UITableView()
@@ -18,11 +19,21 @@ class ViewController: UIViewController {
         return tableView
     }()
     
+    var realm: Realm!
     
-    var addButton = UIBarButtonItem()
+    var objectsArray: Results<Item> {
+        get {
+            return realm.objects(Item.self)
+        }
+    }
+    
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // print(Realm.Configuration.defaultConfiguration.fileURL!)
+        
+        realm = try! Realm()
         
         setup()
         setupTableView()
@@ -53,8 +64,15 @@ class ViewController: UIViewController {
         let cancelAction = UIAlertAction(title: "Cancel", style: .destructive, handler: nil)
         let addAction = UIAlertAction(title: "Add", style: .default) { (UIAlertAction) -> Void in
             let myTextField = (alertVC.textFields?.first)! as UITextField
-            self.objectsArray.append(myTextField.text!)
-            self.tableView.insertRows(at: [IndexPath(row: self.objectsArray.count-1, section: 0)], with: .automatic)
+            
+            let item = Item()
+            item.name = myTextField.text!
+            
+            try! self.realm.write {
+                self.realm.add(item)
+                self.tableView.insertRows(at: [IndexPath(row: self.objectsArray.count-1, section: 0)], with: .automatic)
+            }
+            
         }
         alertVC.addAction(addAction)
         alertVC.addAction(cancelAction)
@@ -76,14 +94,21 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: MyCell.reuseIdentifier, for: indexPath) as! MyCell
-        cell.todoImageView.image = UIImage(named: "todo")
-        cell.todoLabel.text = objectsArray[indexPath.row]
+        let item = objectsArray[indexPath.row]
+        cell.todoLabel.text = item.name
+        cell.todoImageView.image = UIImage(named: item.picture)
+        
         return cell
     }
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            self.objectsArray.remove(at: indexPath.row)
+            let item = objectsArray[indexPath.row]
+            
+            try! self.realm.write {
+                self.realm.delete(item)
+            }
+            
             tableView.deleteRows(at: [indexPath], with: .automatic)
         }
     }
